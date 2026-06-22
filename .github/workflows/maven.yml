@@ -6,7 +6,6 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# إعطاء الصلاحية للسيرفر لرفع التقرير وصفحة الويب
 permissions:
   contents: write
   pages: write
@@ -32,15 +31,16 @@ jobs:
       # 3. تشغيل التيست وتوليد النتائج
       - name: Run Automation Tests
         run: mvn test
-        continue-on-error: true # عشان لو التيست فشل مستقبلاً، يكمل ويرفع التقرير وما يوقف الـ Pipeline
+        continue-on-error: true
 
-      # 4. جلب تاريخ التقارير السابقة (عشان يعطيك رسم بياني للتطور في جيتهاب)
+      # 4. جلب تاريخ التقارير السابقة (مع السماح بعدم وجودها في أول مرة)
       - name: Get Allure history
         uses: actions/checkout@v4
         if: always()
         with:
           ref: gh-pages
           path: gh-pages
+        continue-on-error: true
 
       # 5. بناء تقرير Allure الاحترافي سحابياً
       - name: Allure Report Action from Marketplace
@@ -58,4 +58,4 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages
-          publish_dir: allure-history
+          publish_dir: allure-history # تم تعديل الإعداد الداخلي ليعمل تلقائياً
