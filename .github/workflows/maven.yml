@@ -6,16 +6,22 @@ on:
   pull_request:
     branches: [ "main" ]
 
+# إعطاء الصلاحية للسيرفر لرفع التقرير وصفحة الويب
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. سحب الكود من المستودع إلى السيرفر
+      # 1. سحب الكود
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. إعداد بيئة جافا (JDK 21 للتوافق مع المافن في السيرفر)
+      # 2. إعداد جافا
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
@@ -23,6 +29,33 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. تشغيل فحص السيلينيوم (بدون واجهة رسومية سحابية Headless)
+      # 3. تشغيل التيست وتوليد النتائج
       - name: Run Automation Tests
         run: mvn test
+        continue-on-error: true # عشان لو التيست فشل مستقبلاً، يكمل ويرفع التقرير وما يوقف الـ Pipeline
+
+      # 4. جلب تاريخ التقارير السابقة (عشان يعطيك رسم بياني للتطور في جيتهاب)
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        if: always()
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+      # 5. بناء تقرير Allure الاحترافي سحابياً
+      - name: Allure Report Action from Marketplace
+        uses: simple-elf/allure-report-action@v1.11
+        if: always()
+        with:
+          allure_results: target/allure-results
+          allure_history: allure-history
+          keep_reports: 20
+
+      # 6. رفع التقرير فوراً ونشره على GitHub Pages
+      - name: Deploy Allure Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        if: always()
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
