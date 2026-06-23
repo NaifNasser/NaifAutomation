@@ -5,7 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-  workflow_dispatch: # <--- هذا السطر السحري اللي بيظهر لك الزر يدوياً
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -29,20 +29,30 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. تشغيل التيست وتوليد ملفات الـ JSON لـ Allure
+      # 3. تشغيل التيست وتوليد ملفات النتائج (target/allure-results)
       - name: Run Automation Tests
         run: mvn test
         continue-on-error: true
 
-      # 4. أمر مافن السحري لتوليد مجلد التقرير الثابت يدوياً داخل السيرفر
-      - name: Generate Allure Report Directory
-        run: |
-          mvn allure:report
-          mkdir -p allure-history
-          cp -r target/site/allure-maven-plugin/* allure-history/
+      # 4. جلب تاريخ التقارير السابقة لربط النتائج
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        if: always()
+        with:
+          ref: gh-pages
+          path: gh-pages
         continue-on-error: true
 
-      # 5. رفع التقرير فوراً ونشره على GitHub Pages
+      # 5. بناء التقرير بشكل احترافي ودمج النتائج لتجنب التقرير الفارغ
+      - name: Allure Report Action
+        uses: simple-elf/allure-report-action@v1.11
+        if: always()
+        with:
+          allure_results: target/allure-results
+          allure_history: allure-history
+          keep_reports: 20
+
+      # 6. نشر مجلد التقرير المدمج إلى GitHub Pages
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always()
