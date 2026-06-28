@@ -34,7 +34,7 @@ jobs:
         run: mvn test
         continue-on-error: true
 
-      # 4. بناء تقرير Allure ودمجه تلقائياً في فرع gh-pages (هذه الأداة تتكفل بكل شيء دفعة واحدة)
+      # 4. بناء تقرير Allure وتوليد مجلد الإخراج بدقة
       - name: Load Allure History and Generate Report
         uses: simple-elf/allure-report-action@v1.11
         if: always()
@@ -43,7 +43,7 @@ jobs:
           allure_history: allure-history
           keep_reports: 20
 
-      # 5. رفع المجلد الناتج الصافي إلى GitHub Pages بدون تعارضات
+      # 5. رفع المجلد الناتج الصافي إلى GitHub Pages
       - name: Deploy Allure Report to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
         if: always()
