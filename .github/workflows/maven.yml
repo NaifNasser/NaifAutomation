@@ -33,19 +33,19 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. تشغيل الفحص وتوليد تقرير Allure عبر المافن مباشرة
+      # 3. تشغيل الفحص وتوليد تقرير Allure
       - name: Run Tests and Generate Report
         run: |
           mvn test
           mvn allure:report
         continue-on-error: true
 
-      # 4. رفع المجلد المتولد رسمياً لجيتهاب بدون أدوات خارجية
+      # 4. رفع المجلد المتولد تلقائياً (تعديل المسار للمسار العام المضمون)
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         if: always()
         with:
-          path: 'target/site/allure-maven-plugin'
+          path: 'target/site'
 
       # 5. النشر المباشر على الويب
       - name: Deploy to GitHub Pages
