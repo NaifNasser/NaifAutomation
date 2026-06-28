@@ -9,12 +9,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
 
 jobs:
   build-and-test:
@@ -33,22 +27,17 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      # 3. تشغيل الفحص وتوليد تقرير Allure
+      # 3. تشغيل الفحص وتوليد التقرير
       - name: Run Tests and Generate Report
         run: |
           mvn test
           mvn allure:report
         continue-on-error: true
 
-      # 4. رفع المجلد المتولد تلقائياً (تعديل المسار للمسار العام المضمون)
-      - name: Upload Pages Artifact
-        uses: actions/upload-pages-artifact@v3
+      # 4. الرفع باستخدام الأداة الحديثة v4 المتوافقة مع Node 24 مجبرةً
+      - name: Upload Allure Report Artifact
+        uses: actions/upload-artifact@v4
         if: always()
         with:
-          path: 'target/site'
-
-      # 5. النشر المباشر على الويب
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
-        if: always()
+          name: allure-report-website
+          path: target/site/allure-maven-plugin/
