@@ -63,7 +63,7 @@
                         <suiteXmlFile>testng.xml</suiteXmlFile>
                     </suiteXmlFiles>
                     <argLine>
-                        -javaagent:"${settings.localRepository}/org/aspectj/aspectjweaver/1.9.22/aspectjweaver-1.9.22.jar"
+                        -javaagent:${org.aspectj:aspectjweaver:jar}
                     </argLine>
                 </configuration>
                 <dependencies>
