@@ -13,7 +13,6 @@ public class BaseTest {
     private static ThreadLocal<WebDriver> driverThreadLocal = new ThreadLocal<>();
 
     @BeforeMethod
-    @BeforeMethod
     public void setUp() {
         ChromeOptions options = new ChromeOptions();
 
