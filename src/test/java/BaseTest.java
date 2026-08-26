@@ -13,21 +13,27 @@ public class BaseTest {
     private static ThreadLocal<WebDriver> driverThreadLocal = new ThreadLocal<>();
 
     @BeforeMethod
+    @BeforeMethod
     public void setUp() {
         ChromeOptions options = new ChromeOptions();
+
+        // خيارات حاسمة لتشغيل السيلينيوم داخل السيرفر السحابي (Linux/GitHub Actions)
+        options.addArguments("--headless=new");
+        options.addArguments("--no-sandbox");
+        options.addArguments("--disable-dev-shm-usage");
+        options.addArguments("--window-size=1920,1080");
+
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.setExperimentalOption("excludeSwitches", Collections.singletonList("enable-automation"));
         options.setExperimentalOption("useAutomationExtension", false);
-        options.addArguments("user-agent=" + ConfigReader.getProperty("user.agent"));
 
-        // حل مشكلة الـ Parallel: ننشئ مجلد بروفايل مؤقت لكل Thread لكي لا تتصادم المتصفحات
-        String uniqueProfileDir = ConfigReader.getProperty("chrome.profile.dir") + "_" + Thread.currentThread().getId();
-        options.addArguments("--user-data-dir=" + uniqueProfileDir);
+        if (ConfigReader.getProperty("user.agent") != null) {
+            options.addArguments("user-agent=" + ConfigReader.getProperty("user.agent"));
+        }
 
         WebDriver driver = new ChromeDriver(options);
-        driver.manage().window().maximize();
 
-        // تخزين نسخة المتصفح داخل الـ ThreadLocal الخاصة بالخيط الحالي
+        // تخزين نسخة المتصفح داخل الـ ThreadLocal
         driverThreadLocal.set(driver);
 
         getDriver().get(ConfigReader.getProperty("url"));
