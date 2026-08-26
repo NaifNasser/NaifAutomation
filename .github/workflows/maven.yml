@@ -29,10 +29,9 @@ jobs:
           mvn allure:report
         continue-on-error: true
 
-      # هذا الجزء هو المسؤول عن إظهار الملف المضغوط أسفل الـ Run
       - name: Upload Allure Report Artifact
         uses: actions/upload-artifact@v4
-        if: always() # غصب عن السيرفر سيرفع الملف سواءً نجح التست أو فشل
+        if: always()
         with:
           name: allure-report-website
           path: target/site/allure-maven-plugin/
