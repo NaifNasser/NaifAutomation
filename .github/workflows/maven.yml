@@ -23,15 +23,14 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Run Tests and Generate Report
+      # تشغيل التستات مع طباعة كاملة للمخرجات والاستثناءات في الـ Terminal
+      - name: Run Maven Tests
         run: |
-          mvn test
-          mvn allure:report
+          mvn clean test -Dtest=* -DfailIfNoTests=false
         continue-on-error: true
 
-      - name: Upload Allure Report Artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: allure-report-website
-          path: target/site/allure-maven-plugin/
+      # طباعة تقارير Surefire المباشرة لرؤية الأسعار والمخرجات
+      - name: Print Test Logs
+        run: |
+          echo "=== Surefire Reports Output ==="
+          cat target/surefire-reports/*.txt || echo "No surefire text reports found"
