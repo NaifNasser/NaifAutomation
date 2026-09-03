@@ -14,8 +14,8 @@ public class StockTest extends BaseTest {
 
     @DataProvider(name = "excelStocks", parallel = true)
     public Object[][] getStocksFromExcel() {
-        return ExcelReader.getExcelData("/Users/naif/Desktop/stocks.xlsx","Sheet1");
-
+        String filePath = System.getProperty("user.dir") + "/src/test/resources/stocks.xlsx";
+        return ExcelReader.getExcelData(filePath, "Sheet1");
     }
     @Test(dataProvider = "excelStocks")
     public void checkStockPrices(String stockSearchName) {
