@@ -14,8 +14,8 @@ public class StockTest extends BaseTest {
     public void checkStockPrices(String stockSearchName) {
         GooglePage google = new GooglePage(getDriver());
 
-        String searchQuery = stockSearchName.trim() + " stock price";
-        google.typeSlowly(searchQuery);
+        // إرسال رمز السهم كما هو من الإكسل (مثل: GOOG, NVDA, NBIS, RKLB)
+        google.typeSlowly(stockSearchName);
 
         String rawPrice = google.getPriceText();
         if (rawPrice == null || rawPrice.trim().isEmpty()) {
@@ -25,7 +25,7 @@ public class StockTest extends BaseTest {
         }
 
         double cleanPrice = cleanPrice(rawPrice);
-        System.out.println("✅ " + stockSearchName + " is now: " + cleanPrice + " USD");
+        System.out.println("✅ " + stockSearchName.trim() + " is now: " + cleanPrice + " USD");
 
         Assert.assertTrue(cleanPrice > 0, "Stock price should be greater than zero");
     }
@@ -33,10 +33,6 @@ public class StockTest extends BaseTest {
     private double cleanPrice(String input) {
         String clean = input.replaceAll("[^0-9.]", "");
         if (clean.isEmpty()) return 0.0;
-
-        if (clean.indexOf('.') != clean.lastIndexOf('.')) {
-            clean = clean.substring(0, clean.indexOf('.') + 3);
-        }
         return Double.parseDouble(clean);
     }
 }
