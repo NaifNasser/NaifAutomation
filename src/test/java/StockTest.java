@@ -14,8 +14,7 @@ public class StockTest extends BaseTest {
     public void checkStockPrices(String stockSearchName) {
         GooglePage google = new GooglePage(getDriver());
 
-        // إضافـة كلمة stock لضمان إظهار كارت سعر السهم المباشر في Google
-        String searchQuery = stockSearchName.trim() + " stock";
+        String searchQuery = stockSearchName.trim() + " stock price";
         google.typeSlowly(searchQuery);
 
         String rawPrice = google.getPriceText();
@@ -26,25 +25,18 @@ public class StockTest extends BaseTest {
         }
 
         double cleanPrice = cleanPrice(rawPrice);
-        System.out.println("✅ " + stockSearchName + " is now: " + String.format("%.2f", cleanPrice) + " USD");
+        System.out.println("✅ " + stockSearchName + " is now: " + cleanPrice + " USD");
 
         Assert.assertTrue(cleanPrice > 0, "Stock price should be greater than zero");
-        try { Thread.sleep(1000); } catch (Exception e) {}
     }
 
     private double cleanPrice(String input) {
-        // تنظيف النص وتصفية الأرقام والفاصلة العشرية فقط
         String clean = input.replaceAll("[^0-9.]", "");
+        if (clean.isEmpty()) return 0.0;
 
-        if (clean.isEmpty()) {
-            return 0.0;
-        }
-
-        // التعامل مع وجود أكثر من نقطة عشرية إن وجدت
         if (clean.indexOf('.') != clean.lastIndexOf('.')) {
             clean = clean.substring(0, clean.indexOf('.') + 3);
         }
-
         return Double.parseDouble(clean);
     }
 }

@@ -4,51 +4,50 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+
 import java.time.Duration;
 
 public class GooglePage {
     private WebDriver driver;
     private WebDriverWait wait;
 
-    // 1. تعريف مكان العناصر (Locators) - هنا "مخزن" العناوين
+    // Locators
     private By searchBox = By.name("q");
-    // هذا يبحث عن أي عنصر يحتوي على سمة data-precision (الخاصة بالأسعار في جوجل)
-    private By priceSpan = By.xpath("//span[@data-precision='2'] | //span[@jsname='vW79Id'] | //div[@id='knowledge-finance-wholepage__entity-summary']//span[1]");
 
-    // 2. الـ Constructor: لربط الصفحة بالمتصفح
+    // أزرار موافقة الكوكيز باللغتين الإنجليزية والعربية
+    private By acceptCookiesButtons = By.xpath("//button[contains(., 'Accept all') or contains(., 'I agree') or contains(., 'الموافقة على الكل') or contains(., 'أوافق')]");
+
+    // عناصر سعر السهم المتعددة في Google Finance Card
+    private By priceLocators = By.xpath("//span[@class='I3A362'] | //span[@class='I65263'] | //div[@class='YMlA3e'] | //span[contains(@data-value, '.')] | //span[@class='I8A362']");
+
     public GooglePage(WebDriver driver) {
         this.driver = driver;
         this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        bypassCookieConsent();
     }
 
-    // 3. العمليات (Actions): ماذا نستطيع أن نفعل في هذه الصفحة؟
-    public void searchFor(String stockName) {
-        WebElement element = wait.until(ExpectedConditions.elementToBeClickable(searchBox));
-        element.clear();
-        element.sendKeys(stockName + " stock price" + Keys.ENTER); // لمستك الذكية هنا أيضاً
+    private void bypassCookieConsent() {
+        try {
+            WebDriverWait shortWait = new WebDriverWait(driver, Duration.ofSeconds(3));
+            WebElement acceptBtn = shortWait.until(ExpectedConditions.elementToBeClickable(acceptCookiesButtons));
+            acceptBtn.click();
+        } catch (Exception ignored) {
+            // إذا لم يظهر بنر الكوكيز يتجاوز الخطوة فوراً
+        }
     }
 
-    // ميثود تحاكي كتابة البشر (حرف حرف مع تأخير بسيط)
     public void typeSlowly(String text) {
         WebElement element = wait.until(ExpectedConditions.elementToBeClickable(searchBox));
         element.clear();
-
-        // هنا الكود يدمج جملة stock price تلقائياً مع الكلمة القادمة من الإكسل
-        String fullSearchText = text + " stock price";
-
-        for (char c : fullSearchText.toCharArray()) {
-            element.sendKeys(String.valueOf(c));
-            try { Thread.sleep(150); } catch (Exception e) {}
-        }
-        try { Thread.sleep(1000); } catch (Exception e) {} // انتظر ثانية قبل الضغط على انتر
-        element.sendKeys(Keys.ENTER);
+        element.sendKeys(text + Keys.ENTER);
     }
 
     public String getPriceText() {
         try {
-            return wait.until(ExpectedConditions.visibilityOfElementLocated(priceSpan)).getText();
+            WebElement priceElement = wait.until(ExpectedConditions.visibilityOfElementLocated(priceLocators));
+            return priceElement.getText();
         } catch (Exception e) {
-            return ""; // حماية إضافية لو لم يجد العنصر لا ينهار التست بل يعيد نص فارغ ويتعامل معه شرط التيست
+            return null;
         }
     }
 }
