@@ -5,13 +5,21 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.List;
 
 public class GooglePage {
     private WebDriver driver;
     private WebDriverWait wait;
 
-    // Selector ثابت ومباشر لسعر السهم على Yahoo Finance
-    private By stockPriceSelector = By.cssSelector("fin-streamer[data-field='regularMarketPrice']");
+    // قائمة بجميع الـ Class Names والمحددات المحتملة لبطاقة أسعار الأسهم
+    private By[] priceSelectors = new By[]{
+            By.cssSelector("span[data-currency-code]"),
+            By.cssSelector("span.I3A362"),
+            By.cssSelector("span.I65263"),
+            By.cssSelector("div.YMlA3e"),
+            By.xpath("//div[@class='N261B']//span[contains(text(),'.')]"),
+            By.xpath("//span[contains(@class,'D413eb')]")
+    };
 
     public GooglePage(WebDriver driver) {
         this.driver = driver;
@@ -19,17 +27,26 @@ public class GooglePage {
     }
 
     public void typeSlowly(String stockSymbol) {
-        // الانتقال المباشر لصفحة السهم لمنع مشاكل حجب محركات البحث
-        String url = "https://finance.yahoo.com/quote/" + stockSymbol.trim().toUpperCase();
-        driver.get(url);
+        // فتح نتائج بحث جوجل بشكل مباشر وسريع
+        String searchUrl = "https://www.google.com/search?q=" + stockSymbol.trim() + "+stock+price&hl=en";
+        driver.get(searchUrl);
     }
 
     public String getPriceText() {
-        try {
-            WebElement priceElement = wait.until(ExpectedConditions.visibilityOfElementLocated(stockPriceSelector));
-            return priceElement.getText();
-        } catch (Exception e) {
-            return null;
+        // تجربة جميع المحددات الممكنة لاستخراج السعر
+        for (By selector : priceSelectors) {
+            try {
+                List<WebElement> elements = driver.findElements(selector);
+                for (WebElement el : elements) {
+                    String text = el.getText().trim();
+                    // التحقق أن النص المستخرج يحتوي على رقم ومبدئياً شكل سعر
+                    if (!text.isEmpty() && text.matches(".*\\d+.*")) {
+                        return text;
+                    }
+                }
+            } catch (Exception ignored) {
+            }
         }
+        return null;
     }
 }
