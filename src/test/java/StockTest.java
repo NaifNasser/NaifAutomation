@@ -14,18 +14,17 @@ public class StockTest extends BaseTest {
     public void checkStockPrices(String stockSearchName) {
         GooglePage google = new GooglePage(getDriver());
 
-        // إرسال رمز السهم كما هو من الإكسل (مثل: GOOG, NVDA, NBIS, RKLB)
         google.typeSlowly(stockSearchName);
 
         String rawPrice = google.getPriceText();
         if (rawPrice == null || rawPrice.trim().isEmpty()) {
-            System.out.println("⚠️ تعذر جلب السعر للسهم أو الخلية فارغة: " + stockSearchName);
+            System.out.println("⚠️ تعذر جلب السعر للسهم: " + stockSearchName);
             Assert.fail("جلب السعر أعطى نتيجة فارغة للسهم: " + stockSearchName);
             return;
         }
 
         double cleanPrice = cleanPrice(rawPrice);
-        System.out.println("✅ " + stockSearchName.trim() + " is now: " + cleanPrice + " USD");
+        System.out.println("✅ " + stockSearchName.trim() + " price is: $" + cleanPrice);
 
         Assert.assertTrue(cleanPrice > 0, "Stock price should be greater than zero");
     }

@@ -5,21 +5,13 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
-import java.util.List;
 
 public class GooglePage {
     private WebDriver driver;
     private WebDriverWait wait;
 
-    // قائمة بجميع الـ Class Names والمحددات المحتملة لبطاقة أسعار الأسهم
-    private By[] priceSelectors = new By[]{
-            By.cssSelector("span[data-currency-code]"),
-            By.cssSelector("span.I3A362"),
-            By.cssSelector("span.I65263"),
-            By.cssSelector("div.YMlA3e"),
-            By.xpath("//div[@class='N261B']//span[contains(text(),'.')]"),
-            By.xpath("//span[contains(@class,'D413eb')]")
-    };
+    // المحدد الخاص بسعر السهم في Google Finance
+    private By googleFinancePrice = By.xpath("//div[@class='YMlA3e'] | //span[@class='I3A362'] | //div[contains(@class,'fx33pd')]");
 
     public GooglePage(WebDriver driver) {
         this.driver = driver;
@@ -27,26 +19,27 @@ public class GooglePage {
     }
 
     public void typeSlowly(String stockSymbol) {
-        // فتح نتائج بحث جوجل بشكل مباشر وسريع
-        String searchUrl = "https://www.google.com/search?q=" + stockSymbol.trim() + "+stock+price&hl=en";
-        driver.get(searchUrl);
+        // الانتقال المباشر لصفحة السهم في Google Finance لتفادي البحث والكوكيز
+        String symbol = stockSymbol.trim().toUpperCase();
+        String url = "https://www.google.com/finance/quote/" + symbol + ":NASDAQ";
+        driver.get(url);
     }
 
     public String getPriceText() {
-        // تجربة جميع المحددات الممكنة لاستخراج السعر
-        for (By selector : priceSelectors) {
+        try {
+            WebElement priceElement = wait.until(ExpectedConditions.visibilityOfElementLocated(googleFinancePrice));
+            return priceElement.getText();
+        } catch (Exception e) {
+            // محاولة إضافية للبحث عبر البورصة الأخرى (NYSE) في حال لم يكن NASDAQ
             try {
-                List<WebElement> elements = driver.findElements(selector);
-                for (WebElement el : elements) {
-                    String text = el.getText().trim();
-                    // التحقق أن النص المستخرج يحتوي على رقم ومبدئياً شكل سعر
-                    if (!text.isEmpty() && text.matches(".*\\d+.*")) {
-                        return text;
-                    }
+                String currentUrl = driver.getCurrentUrl();
+                if (currentUrl.contains("NASDAQ")) {
+                    driver.get(currentUrl.replace("NASDAQ", "NYSE"));
+                    WebElement priceElement = wait.until(ExpectedConditions.visibilityOfElementLocated(googleFinancePrice));
+                    return priceElement.getText();
                 }
-            } catch (Exception ignored) {
-            }
+            } catch (Exception ignored) {}
+            return null;
         }
-        return null;
     }
 }
