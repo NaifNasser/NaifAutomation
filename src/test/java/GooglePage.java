@@ -1,45 +1,79 @@
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 import java.time.Duration;
+import java.util.Locale;
 
 public class GooglePage {
-    private WebDriver driver;
-    private WebDriverWait wait;
-
-    // المحدد الخاص بسعر السهم في Google Finance
-    private By googleFinancePrice = By.xpath("//div[@class='YMlA3e'] | //span[@class='I3A362'] | //div[contains(@class,'fx33pd')]");
+    private final WebDriver driver;
+    private final WebDriverWait wait;
+    // Match the primary quote, not prices in recommendation cards.
+    private final By price = By.cssSelector(".N6SYTe > span[jsname='Pdsbrc'], .YMlA3e.fxKbKc");
+    private String symbol;
+    private boolean explicitExchange;
 
     public GooglePage(WebDriver driver) {
-        this.driver = driver;
-        this.wait = new WebDriverWait(driver, Duration.ofSeconds(15));
+        this(driver, Duration.ofSeconds(20));
     }
 
-    public void typeSlowly(String stockSymbol) {
-        // الانتقال المباشر لصفحة السهم في Google Finance لتفادي البحث والكوكيز
-        String symbol = stockSymbol.trim().toUpperCase();
-        String url = "https://www.google.com/finance/quote/" + symbol + ":NASDAQ";
-        driver.get(url);
+    GooglePage(WebDriver driver, Duration timeout) {
+        this.driver = driver;
+        this.wait = new WebDriverWait(driver, timeout);
+        this.wait.ignoring(StaleElementReferenceException.class);
+    }
+
+    public void openStock(String stockSymbol) {
+        symbol = stockSymbol.trim().toUpperCase(Locale.ROOT);
+        if (!symbol.matches("[A-Z0-9.-]+(:[A-Z0-9]+)?")) {
+            throw new IllegalArgumentException("Invalid stock symbol: " + stockSymbol);
+        }
+        explicitExchange = symbol.contains(":");
+        driver.get("https://www.google.com/finance/quote/" + symbol
+                + (explicitExchange ? "" : ":NASDAQ") + "?hl=en");
     }
 
     public String getPriceText() {
         try {
-            WebElement priceElement = wait.until(ExpectedConditions.visibilityOfElementLocated(googleFinancePrice));
-            return priceElement.getText();
-        } catch (Exception e) {
-            // محاولة إضافية للبحث عبر البورصة الأخرى (NYSE) في حال لم يكن NASDAQ
+            return waitForPrice();
+        } catch (QuoteNotFoundException first) {
+            if (explicitExchange || symbol == null) throw first;
+            driver.get("https://www.google.com/finance/quote/" + symbol + ":NYSE?hl=en");
             try {
-                String currentUrl = driver.getCurrentUrl();
-                if (currentUrl.contains("NASDAQ")) {
-                    driver.get(currentUrl.replace("NASDAQ", "NYSE"));
-                    WebElement priceElement = wait.until(ExpectedConditions.visibilityOfElementLocated(googleFinancePrice));
-                    return priceElement.getText();
-                }
-            } catch (Exception ignored) {}
-            return null;
+                return waitForPrice();
+            } catch (TimeoutException | QuoteNotFoundException second) {
+                second.addSuppressed(first);
+                throw second;
+            }
         }
+    }
+
+    private static class QuoteNotFoundException extends IllegalStateException {
+        QuoteNotFoundException(String message) {
+            super(message);
+        }
+    }
+
+    private String waitForPrice() {
+        return wait.withMessage(() -> "No non-empty primary quote at " + driver.getCurrentUrl())
+                .until(d -> {
+                    String url = d.getCurrentUrl();
+                    if (url.contains("/sorry/") || url.contains("consent.google.")) {
+                        throw new IllegalStateException("Google requires consent or verification: " + url);
+                    }
+                    if (d.findElements(By.xpath("//*[normalize-space(text())='Page Not Found']"))
+                            .stream().anyMatch(WebElement::isDisplayed)) {
+                        throw new QuoteNotFoundException("Quote not found at " + url);
+                    }
+                    for (WebElement element : d.findElements(price)) {
+                        if (element.isDisplayed() && !element.getText().isBlank()) {
+                            return element.getText().trim();
+                        }
+                    }
+                    return null;
+                });
     }
 }

@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="Stock Suite" parallel="tests" thread-count="2">
+<suite name="Stock Suite">
     <test name="Chrome Stock Tests">
         <classes>
+            <class name="StockSupportTest"/>
+            <class name="GooglePageTest"/>
             <class name="StockTest"/>
         </classes>
     </test>

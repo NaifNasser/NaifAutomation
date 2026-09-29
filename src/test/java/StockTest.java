@@ -4,9 +4,9 @@ import org.testng.annotations.Test;
 
 public class StockTest extends BaseTest {
 
-    @DataProvider(name = "excelStocks", parallel = true)
+    @DataProvider(name = "excelStocks", parallel = false)
     public Object[][] getStocksFromExcel() {
-        String filePath = System.getProperty("user.dir") + "/src/test/resources/stocks.xlsx";
+        String filePath = "stocks.xlsx";
         return ExcelReader.getExcelData(filePath, "Sheet1");
     }
 
@@ -14,7 +14,7 @@ public class StockTest extends BaseTest {
     public void checkStockPrices(String stockSearchName) {
         GooglePage google = new GooglePage(getDriver());
 
-        google.typeSlowly(stockSearchName);
+        google.openStock(stockSearchName);
 
         String rawPrice = google.getPriceText();
         if (rawPrice == null || rawPrice.trim().isEmpty()) {
@@ -23,15 +23,10 @@ public class StockTest extends BaseTest {
             return;
         }
 
-        double cleanPrice = cleanPrice(rawPrice);
+        java.math.BigDecimal cleanPrice = PriceParser.parse(rawPrice);
         System.out.println("✅ " + stockSearchName.trim() + " price is: $" + cleanPrice);
 
-        Assert.assertTrue(cleanPrice > 0, "Stock price should be greater than zero");
+        Assert.assertTrue(cleanPrice.signum() > 0, "Stock price should be greater than zero");
     }
 
-    private double cleanPrice(String input) {
-        String clean = input.replaceAll("[^0-9.]", "");
-        if (clean.isEmpty()) return 0.0;
-        return Double.parseDouble(clean);
-    }
 }

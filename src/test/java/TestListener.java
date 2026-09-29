@@ -1,8 +1,9 @@
-import io.qameta.allure.Attachment;
+import io.qameta.allure.Allure;
+import java.io.ByteArrayInputStream;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
-import org.testng.ITestContext;
+import org.openqa.selenium.WebDriverException;
 import org.testng.ITestListener;
 import org.testng.ITestResult;
 
@@ -15,16 +16,23 @@ public class TestListener implements ITestListener {
 
         // جلب الـ driver المشغل حالياً من كلاس التيست
         Object currentClass = result.getInstance();
+        if (!(currentClass instanceof BaseTest)) return;
         WebDriver driver = ((BaseTest) currentClass).getDriver();
 
         if (driver != null) {
-            saveScreenshot(driver);
+            try {
+                saveScreenshot(driver);
+            } catch (WebDriverException e) {
+                System.err.println("Screenshot failed: " + e.getMessage());
+            }
         }
     }
 
-    // الـ Annotation هذا يخبر Allure أن هذه الصورة تابعة للتقرير
-    @Attachment(value = "Page Screenshot on Failure", type = "image/png")
+    // إرفاق مباشر يعمل في Maven وIntelliJ بدون AspectJ
     public byte[] saveScreenshot(WebDriver driver) {
-        return ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+        byte[] screenshot = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
+        Allure.addAttachment("Page Screenshot on Failure", "image/png",
+                new ByteArrayInputStream(screenshot), ".png");
+        return screenshot;
     }
 }

@@ -1,23 +1,20 @@
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 public class ConfigReader {
-    private static Properties properties;
+    private static final Properties properties = new Properties();
 
-    // Static block يشتغل تلقائياً أول ما يستدعى الكلاس ليقرأ الملف مرة واحدة
     static {
-        try {
-            FileInputStream fileInputStream = new FileInputStream("src/test/resources/config.properties");
-            properties = new Properties();
-            properties.load(fileInputStream);
+        try (InputStream input = ConfigReader.class.getResourceAsStream("/config.properties")) {
+            if (input == null) throw new IllegalStateException("Missing config.properties on classpath");
+            properties.load(input);
         } catch (IOException e) {
-            System.out.println("❌ فشل في قراءة ملف config.properties");
-            e.printStackTrace();
+            throw new IllegalStateException("Cannot read config.properties", e);
         }
     }
 
     public static String getProperty(String key) {
-        return properties.getProperty(key);
+        return System.getProperty(key, properties.getProperty(key));
     }
 }
